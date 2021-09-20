@@ -1,3 +1,5 @@
 *.wav
 *.npy
 *.gz
+__pycache__
+._*
