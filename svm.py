@@ -36,10 +36,10 @@ def grad(Xi, Yi, w):
     return son / mom
 
 
-def average_pooling(arr):
+def average_pooling(arr, byx=8, byy=13):
     x, y = arr.shape
-    new_x, new_y = x // 8, y // 13
-    arr = np.mean(arr.reshape(new_x, 8, new_y, 13), axis=(1, 3))
+    new_x, new_y = x // byx, y // byy
+    arr = np.mean(arr.reshape(new_x, byx, new_y, byy), axis=(1, 3))
     return arr
 
 

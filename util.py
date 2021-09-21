@@ -7,6 +7,8 @@ import librosa.display
 import numpy as np
 from scipy.io.wavfile import read as read_wav
 
+from sqlhelper import get_colors
+
 wavfile_root = './wavs'
 feature_root = './features'
 
@@ -124,3 +126,28 @@ def load_random_vectors(files, n=60):
         features.append(feature)
         labels.append(music_id)
     return labels, features
+
+
+def average_mfcc(arr):
+    factor = 32
+    x, y = arr.shape
+    new_x = factor
+    new_y = 13
+    regx = x // factor * factor
+    arr = arr[:regx, :]
+    arr = np.max(arr.reshape(new_x, regx // factor, new_y, 3), axis=(1, 3))
+    return arr
+
+
+def load_data(files, n=100, ts=30):
+    labels, features = load_random_vectors(files, n + ts)
+    # pre process features : e.g. cut to same length
+    vectors = np.array([average_mfcc(v) for v in features])
+    print(vectors[0])
+    print("Preparing Y")
+    colors = get_colors('210920.db')
+    print(colors)
+    y = np.array([colors[x]-1 for x in labels])
+    print(y)
+    labels = y
+    return (vectors[0:n], labels[0:n]), (vectors[n:], labels[n:])

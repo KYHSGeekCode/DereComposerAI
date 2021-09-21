@@ -1,0 +1,61 @@
+import random  # for generating random numbers
+
+import matplotlib.pyplot as plt  # MATLAB like plotting routines
+# The MNIST data is split between 60,000 28 x 28 pixel training images and 10,000 28 x 28 pixel images
+from keras.models import Sequential
+from tensorflow.python.keras.utils import np_utils
+
+from util import get_music_files, load_data
+
+files = get_music_files()
+data_n = 100
+ts_n = 30
+(X_train, y_train), (X_test, y_test) = load_data(files, data_n, ts_n)
+
+print("X_train shape", X_train.shape)
+print("y_train shape", y_train.shape)
+print("X_test shape", X_test.shape)
+print("y_test shape", y_test.shape)
+
+plt.rcParams['figure.figsize'] = (9, 9)  # Make the figures a bit bigger
+
+for i in range(9):
+    plt.subplot(3, 3, i + 1)
+    num = random.randint(0, len(X_train) - 1)
+    plt.imshow(X_train[num], cmap='gray', interpolation='none')
+    plt.title("Class {}".format(y_train[num]))
+
+plt.tight_layout()
+plt.show()
+
+
+# just a little function for pretty printing a matrix
+def matprint(mat, fmt="g"):
+    col_maxes = [max([len(("{:" + fmt + "}").format(x)) for x in col]) for col in mat.T]
+    for x in mat:
+        for i, y in enumerate(x):
+            print(("{:" + str(col_maxes[i]) + fmt + "}").format(y), end="  ")
+        print("")
+
+
+# now print!
+matprint(X_train[num])
+
+X_train = X_train.reshape(data_n, 32 * 13)  # reshape 60,000 28 x 28 matrices into 60,000 784-length vectors.
+X_test = X_test.reshape(ts_n, 32 * 13)  # reshape 10,000 28 x 28 matrices into 10,000 784-length vectors.
+
+X_train = X_train.astype('float32')  # change integers to 32-bit floating point numbers
+X_test = X_test.astype('float32')
+# X_train /= 255  # normalize each value for each pixel for the entire vector for each input
+# X_test /= 255
+
+print("Training matrix shape", X_train.shape)
+print("Testing matrix shape", X_test.shape)
+print("Y_train", y_train)
+
+nb_classes = 4  # number of unique digits
+
+Y_train = np_utils.to_categorical(y_train, nb_classes)
+Y_test = np_utils.to_categorical(y_test, nb_classes)
+
+model = Sequential()
