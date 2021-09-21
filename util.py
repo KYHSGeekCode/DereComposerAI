@@ -5,6 +5,7 @@ from os.path import isfile, join
 
 import librosa.display
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.io.wavfile import read as read_wav
 
 from sqlhelper import get_colors
@@ -29,31 +30,36 @@ def prepare_audio_feature(music_id):
     x = librosa.load(path, sampling_rate)[0]
     S = librosa.feature.melspectrogram(x, sr=sampling_rate, n_mels=128)
     log_S = librosa.power_to_db(S, ref=np.max)
-    rms = librosa.feature.rms(S=S, frame_length=255)
-    print(len(rms[0]))
-    mfcc = librosa.feature.mfcc(S=log_S, n_mfcc=12, )
-    mfcc_e = np.append(mfcc, rms, axis=0)
-    delta_mfcc_e = librosa.feature.delta(mfcc_e, order=1)
-    delta2_mfcc_e = librosa.feature.delta(mfcc_e, order=2)
+    mfcc = librosa.feature.mfcc(S=log_S, n_mfcc=20)
+    delta2_mfcc = librosa.feature.delta(mfcc, order=2)
 
-    # plt.figure(figsize=(96, 4))
-    #    librosa.display.specshow(delta2_mfcc_e, sr=sampling_rate, x_axis='time')
-    #    plt.ylabel('MFCC coeffs')
-    #    plt.xlabel('Time')
-    #    plt.title('MFCC')
-    #    plt.colorbar()
-    #    plt.tight_layout()
-    #    plt.show()
+    # rms = librosa.feature.rms(S=S, frame_length=255)
+    # print(len(rms[0]))
+    # mfcc = librosa.feature.mfcc(S=log_S, n_mfcc=12, )
+    # mfcc_e = np.append(mfcc, rms, axis=0)
+    # delta_mfcc_e = librosa.feature.delta(mfcc_e, order=1)
+    # delta2_mfcc_e = librosa.feature.delta(mfcc_e, order=2)
 
-    print(mfcc[0])
-    total_feature = np.append(mfcc_e, delta_mfcc_e, axis=0)
-    total_feature = np.append(total_feature, delta2_mfcc_e, axis=0)
-    print(len(total_feature))
-    for line in total_feature:
-        print(len(line))
-        print(line)
-    print(total_feature)
-    feature_vectors = total_feature.transpose()
+    plt.figure(figsize=(96, 4))
+    librosa.display.specshow(delta2_mfcc, sr=sampling_rate, x_axis='time')
+    plt.ylabel('MFCC coeffs')
+    plt.xlabel('Time')
+    plt.title('MFCC')
+    plt.colorbar()
+    plt.tight_layout()
+    plt.show()
+
+    # print(mfcc[0])
+    # total_feature = np.append(mfcc_e, delta_mfcc_e, axis=0)
+    # total_feature = np.append(total_feature, delta2_mfcc_e, axis=0)
+    total_feature = delta2_mfcc
+    # print(len(total_feature))
+    # for line in total_feature:
+    #     print(len(line))
+    #     print(line)
+    # print(total_feature)
+    # feature_vectors = total_feature.transpose()
+    feature_vectors = np.array(total_feature)
     with open(feature_name(music_id), 'wb') as f:
         np.save(f, feature_vectors)
     return feature_vectors
@@ -132,10 +138,12 @@ def average_mfcc(arr):
     factor = 32
     x, y = arr.shape
     new_x = factor
-    new_y = 13
+    new_y = 39 - 20
     regx = x // factor * factor
-    arr = arr[:regx, :]
-    arr = np.max(arr.reshape(new_x, regx // factor, new_y, 3), axis=(1, 3))
+    arr = arr[:regx, : -20]
+    arr = np.log1p(arr - arr.min() - 0.8) - 5
+    # arr = np.log1p(arr - arr.min() + 1)
+    arr = np.mean(arr.reshape(new_x, regx // factor, new_y, 1), axis=(1, 3))
     return arr
 
 
@@ -147,7 +155,7 @@ def load_data(files, n=100, ts=30):
     print("Preparing Y")
     colors = get_colors('210920.db')
     print(colors)
-    y = np.array([colors[x]-1 for x in labels])
+    y = np.array([colors[x] - 1 for x in labels])
     print(y)
     labels = y
     return (vectors[0:n], labels[0:n]), (vectors[n:], labels[n:])
